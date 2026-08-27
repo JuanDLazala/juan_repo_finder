@@ -28,6 +28,22 @@ def fecha_corta(iso: str | None) -> str:
     return f"{dt.day} {MESES[dt.month - 1]} {dt.year}"
 
 
+def js_payload(obj) -> str:
+    """Serializa a JSON seguro para incrustar dentro de una etiqueta <script>.
+
+    Las descripciones vienen de repos de terceros. Si alguna contuviera
+    "</script>", cerraría la etiqueta antes de tiempo y rompería la página.
+    Escapamos los caracteres peligrosos como secuencias unicode: siguen siendo
+    JSON válido y ya no pueden salirse del script.
+    """
+    return (json.dumps(obj, ensure_ascii=False)
+            .replace("<", "\\u003c")
+            .replace(">", "\\u003e")
+            .replace("&", "\\u0026")
+            .replace("\u2028", "\\u2028")
+            .replace("\u2029", "\\u2029"))
+
+
 def select_with_quota(all_rows, cfg):
     """Elige qué repos entran al dashboard, garantizando espacio a cada eje.
 
@@ -44,10 +60,16 @@ def select_with_quota(all_rows, cfg):
 
     for axis in cfg["axes"]:
         taken = 0
+        # Piso de relevancia del eje: evita que un cupo reservado se lo lleve
+        # un repo que cayó ahí por una coincidencia de búsqueda y no tiene
+        # nada que ver con el tema.
+        floor = axis.get("min_relevance", 0)
         for row in all_rows:            # ya vienen ordenados por score
             if taken >= quota:
                 break
             if row["full_name"] in seen:
+                continue
+            if (row["relevance"] or 0) < floor:
                 continue
             if axis["id"] in jload(row["axes"]):
                 selected.append(row)
@@ -580,8 +602,8 @@ def build(config_path=None, db_path=None, out=None, run_id=None) -> Path:
     conn.close()
 
     html = (TEMPLATE
-            .replace("__META__", json.dumps(meta, ensure_ascii=False))
-            .replace("__REPOS__", json.dumps(repos, ensure_ascii=False)))
+            .replace("__META__", js_payload(meta))
+            .replace("__REPOS__", js_payload(repos)))
 
     out_path = Path(out or DEFAULT_OUT)
     out_path.parent.mkdir(parents=True, exist_ok=True)

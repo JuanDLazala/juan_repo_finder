@@ -182,6 +182,11 @@ def main() -> None:
     check("El JSON embebido es válido", isinstance(payload, list) and payload,
           f"({len(payload)} repos en el dashboard)")
 
+    from radar.build_dashboard import js_payload
+    hostil = js_payload([{"d": "</script><script>alert(1)</script>"}])
+    check("Escapa contenido hostil venido de repos ajenos",
+          "</script>" not in hostil and "<" not in hostil)
+
     import yaml as _yaml
     with open(ROOT / "config.yaml", encoding="utf-8") as fh:
         cfg = _yaml.safe_load(fh)

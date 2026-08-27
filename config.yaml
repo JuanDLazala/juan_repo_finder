@@ -113,6 +113,10 @@ axes:
     min_stars: 8
     max_age_months: 48
     max_idle_days: 120
+    # Al aflojar tanto los umbrales entran falsos positivos: repos que
+    # aparecen por una coincidencia de búsqueda y nada tienen de político.
+    # Este piso exige que el repo hable de verdad del tema.
+    min_relevance: 0.5
     lexicon:
       - election
       - elections
