@@ -21,6 +21,7 @@ PERMISSIVE = {"mit", "apache-2.0", "bsd-2-clause", "bsd-3-clause", "isc",
 HOT_DAILY_STARS = 50.0     # 50 estrellas/día = momentum absoluto máximo
 HOT_DAILY_GROWTH = 0.02    # crecer 2% diario = momentum relativo máximo
 PROVISIONAL_DAMPING = 0.70  # castigo mientras no haya histórico real
+MIN_INTERVAL_DAYS = 0.5     # menos de 12 horas entre fotos no mide nada
 
 
 # --------------------------------------------------------------------------
@@ -192,18 +193,26 @@ def run(config_path=None, db_path=None, run_id=None) -> int:
         if repo is None:
             continue
 
-        prev = conn.execute(
+        # Buscamos la corrida anterior MÁS RECIENTE que esté suficientemente
+        # separada en el tiempo. Comparar contra una foto de hace veinte
+        # minutos daría momentum cero para todo el mundo: las estrellas no se
+        # mueven en ese lapso. En ese caso preferimos retroceder más, y si no
+        # hay nada lo bastante viejo, volver al estimado provisional.
+        candidates = conn.execute(
             """SELECT stars, captured_at FROM snapshots
                WHERE full_name = ? AND run_id < ?
-               ORDER BY run_id DESC LIMIT 1""",
+               ORDER BY run_id DESC LIMIT 10""",
             (snap["full_name"], run_id),
-        ).fetchone()
+        ).fetchall()
 
         days = None
         stars_prev = None
-        if prev:
-            stars_prev = prev["stars"]
-            days = days_between(prev["captured_at"], snap["captured_at"])
+        for cand in candidates:
+            gap = days_between(cand["captured_at"], snap["captured_at"])
+            if gap is not None and gap >= MIN_INTERVAL_DAYS:
+                stars_prev = cand["stars"]
+                days = gap
+                break
 
         mom, delta, days_used, provisional = momentum_score(
             snap["stars"] or 0, stars_prev, days,

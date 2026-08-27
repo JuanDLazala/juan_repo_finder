@@ -141,7 +141,29 @@ def main() -> None:
               f"mad {r['maturity']*100:5.1f}  rel {r['relevance']*100:5.1f}  "
               f"+{r['stars_delta']:<5} {r['full_name'][:44]:<44} [{flags}]")
 
-    print("\n5. Generando el dashboard")
+    print("\n5. Corrida inmediata (sin dejar pasar tiempo)")
+    sh("-m", "radar.collector", "--db", str(DB), "--fixture", str(TMP / "run2.json"))
+    sh("-m", "radar.scorer", "--db", str(DB))
+
+    conn = connect(DB)
+    n_prov3 = conn.execute(
+        "SELECT COUNT(*) c FROM scores WHERE run_id=3 AND provisional=1"
+    ).fetchone()["c"]
+    n_real3 = conn.execute(
+        "SELECT COUNT(*) c FROM scores WHERE run_id=3 AND provisional=0"
+    ).fetchone()["c"]
+    days3 = conn.execute(
+        "SELECT DISTINCT ROUND(days_elapsed,1) d FROM scores "
+        "WHERE run_id=3 AND provisional=0"
+    ).fetchall()
+    conn.close()
+
+    check("Ignora la foto de hace minutos y usa la de hace 2 días",
+          n_real3 > 0 and all(r["d"] >= 0.5 for r in days3),
+          f"({n_real3} con base real, {n_prov3} provisionales, "
+          f"intervalos {[r['d'] for r in days3]})")
+
+    print("\n6. Generando el dashboard")
     out = TMP / "index.html"
     sh("-m", "radar.build_dashboard", "--db", str(DB), "--out", str(out))
 
