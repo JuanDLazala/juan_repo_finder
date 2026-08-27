@@ -1,0 +1,250 @@
+# ---------------------------------------------------------------------------
+# RADAR DE REPOS — configuración
+#
+# Este es el único archivo que necesitas tocar para cambiar QUÉ busca el radar.
+# Puedes añadir, quitar o reescribir queries sin tocar nada de código.
+# ---------------------------------------------------------------------------
+
+settings:
+  # Solo repos con al menos estas estrellas (mata el ruido de proyectos vacíos)
+  min_stars: 50
+  # Solo repos creados en los últimos N meses (queremos lo nuevo, no lo clásico)
+  max_age_months: 18
+  # Solo repos con actividad reciente (mata el cementerio de abandonados)
+  max_idle_days: 60
+  # Cuántos resultados traer por query (máx. 100)
+  per_query_limit: 50
+  # Segundos de espera entre queries. La API permite 30 búsquedas/minuto
+  # autenticado; 2.5s deja margen de sobra.
+  sleep_between_queries: 2.5
+  # Cuántos repos mostrar en el dashboard
+  dashboard_top_n: 120
+
+# Pesos del ranking final. Deben sumar 1.0
+weights:
+  momentum: 0.50
+  maturity: 0.35
+  relevance: 0.15
+
+# Términos que suman relevancia en CUALQUIER eje (tu contexto particular)
+boosts:
+  - spanish
+  - español
+  - espanol
+  - latam
+  - latin america
+  - latinoamerica
+  - colombia
+  - multilingual
+  - electoral
+  - political
+
+# Términos que restan: normalmente indican recurso de estudio, no librería usable.
+# No excluyen el repo, lo penalizan y lo marcan como "recurso" en el dashboard.
+penalties:
+  - awesome
+  - tutorial
+  - curso
+  - course
+  - roadmap
+  - interview
+  - cheatsheet
+  - cheat-sheet
+  - handbook
+  - study notes
+  - learning path
+  - examples collection
+  - boilerplate collection
+
+axes:
+  - id: escucha-social
+    name: Escucha social e inteligencia
+    short: Escucha
+    color: "#3d7ee6"
+    lexicon:
+      - sentiment
+      - scraper
+      - scraping
+      - twitter
+      - tiktok
+      - instagram
+      - reddit
+      - youtube
+      - telegram
+      - social media
+      - social network
+      - nlp
+      - topic modeling
+      - bot detection
+      - misinformation
+      - disinformation
+      - fact check
+      - network analysis
+      - graph
+      - monitoring
+      - listening
+    queries:
+      - "topic:sentiment-analysis"
+      - "topic:social-media-scraper"
+      - "topic:twitter-api"
+      - "tiktok scraper"
+      - "instagram scraper"
+      - "topic:social-network-analysis"
+      - "bot detection social"
+      - "misinformation detection"
+      - "spanish nlp language:Python"
+      - "topic:web-scraping language:Python"
+
+  - id: politica-electoral
+    name: Política y electoral
+    short: Política
+    color: "#c0453c"
+    lexicon:
+      - election
+      - elections
+      - electoral
+      - voting
+      - voter
+      - ballot
+      - polling
+      - poll
+      - census
+      - civic
+      - government
+      - parliament
+      - congress
+      - legislative
+      - redistricting
+      - gerrymander
+      - geospatial
+      - constituency
+      - campaign
+      - canvassing
+      - transparency
+      - open data
+      - political
+    queries:
+      - "topic:civic-tech"
+      - "topic:elections"
+      - "election data analysis"
+      - "polling forecast model"
+      - "topic:open-data government"
+      - "electoral geospatial map"
+      - "political discourse analysis"
+      - "campaign canvassing tool"
+      - "topic:govtech"
+
+  - id: produccion-creativa
+    name: Producción creativa
+    short: Creativa
+    color: "#8a4fbd"
+    lexicon:
+      - video
+      - image
+      - audio
+      - editing
+      - clip
+      - shorts
+      - reels
+      - subtitle
+      - caption
+      - transcription
+      - whisper
+      - diffusion
+      - text-to-image
+      - text-to-video
+      - text-to-speech
+      - tts
+      - voice
+      - render
+      - ffmpeg
+      - design
+      - canvas
+      - template
+      - thumbnail
+    queries:
+      - "topic:video-editing automation"
+      - "whisper transcription"
+      - "topic:subtitles generator"
+      - "topic:text-to-image"
+      - "topic:text-to-video"
+      - "automatic video clips shorts"
+      - "topic:text-to-speech voice"
+      - "programmatic design generator"
+      - "topic:image-editing python"
+
+  - id: adtech-performance
+    name: Adtech y performance
+    short: Adtech
+    color: "#1f8a70"
+    lexicon:
+      - ads
+      - advertising
+      - facebook ads
+      - meta ads
+      - google ads
+      - campaign
+      - attribution
+      - conversion
+      - marketing mix
+      - mmm
+      - roas
+      - ctr
+      - cpc
+      - analytics
+      - dashboard
+      - tracking
+      - pixel
+      - crm
+      - lead
+      - funnel
+      - seo
+      - email marketing
+      - ab testing
+      - experiment
+    queries:
+      - "facebook ads api"
+      - "topic:google-ads"
+      - "marketing attribution model"
+      - "marketing mix modeling"
+      - "topic:marketing-automation"
+      - "topic:ab-testing"
+      - "topic:crm automation"
+      - "seo automation tool"
+      - "advertising analytics dashboard"
+
+  - id: agentes-llm
+    name: Agentes, LLM y MCP
+    short: Agentes
+    color: "#d18b2c"
+    lexicon:
+      - agent
+      - agents
+      - llm
+      - mcp
+      - model context protocol
+      - rag
+      - retrieval
+      - embedding
+      - vector
+      - prompt
+      - orchestration
+      - workflow
+      - automation
+      - tool use
+      - function calling
+      - claude
+      - openai
+      - langchain
+      - multi-agent
+      - browser automation
+    queries:
+      - "topic:mcp-server"
+      - "topic:ai-agents"
+      - "topic:rag"
+      - "topic:llm-agent"
+      - "browser automation agent llm"
+      - "topic:langchain"
+      - "topic:llmops"
+      - "multi-agent framework"
+      - "topic:prompt-engineering"

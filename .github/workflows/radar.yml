@@ -1,0 +1,63 @@
+name: Radar de repos
+
+on:
+  schedule:
+    # Cada 2 días a las 11:00 UTC = 6:00 a.m. en Colombia
+    - cron: "0 11 */2 * *"
+  workflow_dispatch:        # permite dispararlo a mano desde la pestaña Actions
+
+permissions:
+  contents: write           # necesario para commitear la base de datos actualizada
+
+concurrency:
+  group: radar
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Recolectar repos
+        env:
+          # Si creaste un token propio se usa ese; si no, el token automático
+          # del workflow, que también sirve para buscar repos públicos.
+          RADAR_GITHUB_TOKEN: ${{ secrets.RADAR_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m radar.collector
+
+      - name: Calcular ranking
+        run: python -m radar.scorer
+
+      - name: Generar dashboard
+        run: python -m radar.build_dashboard
+
+      - name: Guardar resultados en el repo
+        run: |
+          git config user.name  "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add data/radar.db docs/index.html
+          if git diff --staged --quiet; then
+            echo "Sin cambios que guardar."
+          else
+            git commit -m "radar: corrida $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
+
+      - name: Publicar dashboard como artefacto descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard
+          path: docs/index.html
+          retention-days: 30
