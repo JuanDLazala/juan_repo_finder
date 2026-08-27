@@ -57,7 +57,7 @@ git init
 git add .
 git commit -m "Radar de repos: versión inicial"
 git branch -M main
-git remote add origin https://github.com/JuanDLazala/juan_repo_finder.git
+git remote add origin https://github.com/TU-USUARIO/radar-repos.git
 git push -u origin main
 ```
 
@@ -121,6 +121,17 @@ Todo vive en `config.yaml` y no necesitas tocar código.
   repo; `max_idle_days`, qué tan abandonado.
 - **Reajustar el ranking**: los tres pesos en `weights` deben sumar 1.0. Si
   quieres cosas más estables y menos hype, sube `maturity` y baja `momentum`.
+- **Calibrar un eje**: cada eje puede sobrescribir `min_stars`,
+  `max_age_months` y `max_idle_days`. Si un eje te devuelve casi nada, baja su
+  `min_stars` y amplía su ventana; si te inunda, súbelos.
+- **Repartir el dashboard**: `per_axis_quota` reserva cupos para cada eje antes
+  de llenar el resto por score global. Sin esa reserva, los ejes con más
+  volumen en GitHub sepultan a los nichos pequeños.
+
+> Los umbrales actuales no son arbitrarios: salen de medir la primera corrida.
+> Política y electoral devolvía 11 repos con el umbral general, y agentes/LLM
+> topaba el límite en 8 de 9 búsquedas. Por eso el primero corre con 8
+> estrellas y 48 meses, y el segundo con 300 estrellas y 12 meses.
 
 Para ver qué búsquedas se van a ejecutar sin gastar llamadas:
 

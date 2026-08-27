@@ -3,14 +3,17 @@
 #
 # Este es el único archivo que necesitas tocar para cambiar QUÉ busca el radar.
 # Puedes añadir, quitar o reescribir queries sin tocar nada de código.
+#
+# Cada eje puede sobrescribir min_stars, max_age_months y max_idle_days.
+# Eso importa: la tecnología cívica y electoral es un nicho pequeño y lento,
+# mientras que agentes y LLM está saturado. Con un solo umbral para todos,
+# uno inunda el ranking y el otro sale vacío.
 # ---------------------------------------------------------------------------
 
 settings:
-  # Solo repos con al menos estas estrellas (mata el ruido de proyectos vacíos)
+  # Valores por defecto; cada eje puede ajustarlos hacia arriba o abajo
   min_stars: 50
-  # Solo repos creados en los últimos N meses (queremos lo nuevo, no lo clásico)
   max_age_months: 18
-  # Solo repos con actividad reciente (mata el cementerio de abandonados)
   max_idle_days: 60
   # Cuántos resultados traer por query (máx. 100)
   per_query_limit: 50
@@ -18,7 +21,10 @@ settings:
   # autenticado; 2.5s deja margen de sobra.
   sleep_between_queries: 2.5
   # Cuántos repos mostrar en el dashboard
-  dashboard_top_n: 120
+  dashboard_top_n: 150
+  # Cupos reservados para cada eje antes de repartir el resto por score.
+  # Evita que un eje con mucho volumen sepulte a los demás.
+  per_axis_quota: 25
 
 # Pesos del ranking final. Deben sumar 1.0
 weights:
@@ -39,8 +45,8 @@ boosts:
   - electoral
   - political
 
-# Términos que restan: normalmente indican recurso de estudio, no librería usable.
-# No excluyen el repo, lo penalizan y lo marcan como "recurso" en el dashboard.
+# Términos que restan: normalmente indican recurso de estudio, no librería
+# usable. No excluyen el repo, lo penalizan y lo marcan como "recurso".
 penalties:
   - awesome
   - tutorial
@@ -61,6 +67,9 @@ axes:
     name: Escucha social e inteligencia
     short: Escucha
     color: "#3d7ee6"
+    # Nicho mediano: bajamos el listón y ampliamos la ventana
+    min_stars: 20
+    max_age_months: 30
     lexicon:
       - sentiment
       - scraper
@@ -85,20 +94,25 @@ axes:
       - listening
     queries:
       - "topic:sentiment-analysis"
-      - "topic:social-media-scraper"
+      - "social media scraper"
       - "topic:twitter-api"
       - "tiktok scraper"
       - "instagram scraper"
-      - "topic:social-network-analysis"
-      - "bot detection social"
+      - "topic:network-analysis"
+      - "topic:bot-detection"
       - "misinformation detection"
-      - "spanish nlp language:Python"
+      - "spanish nlp"
       - "topic:web-scraping language:Python"
 
   - id: politica-electoral
     name: Política y electoral
     short: Política
     color: "#c0453c"
+    # Nicho pequeño y de ritmo lento: umbrales mucho más permisivos.
+    # Con 50 estrellas y 18 meses este eje devolvía casi nada.
+    min_stars: 8
+    max_age_months: 48
+    max_idle_days: 120
     lexicon:
       - election
       - elections
@@ -125,19 +139,20 @@ axes:
       - political
     queries:
       - "topic:civic-tech"
-      - "topic:elections"
-      - "election data analysis"
-      - "polling forecast model"
+      - "topic:election"
+      - "election results data"
+      - "topic:polling"
       - "topic:open-data government"
-      - "electoral geospatial map"
-      - "political discourse analysis"
-      - "campaign canvassing tool"
+      - "electoral map"
+      - "political text analysis"
+      - "topic:political-campaign"
       - "topic:govtech"
 
   - id: produccion-creativa
     name: Producción creativa
     short: Creativa
     color: "#8a4fbd"
+    # Eje abundante: se queda con los umbrales por defecto
     lexicon:
       - video
       - image
@@ -168,15 +183,18 @@ axes:
       - "topic:subtitles generator"
       - "topic:text-to-image"
       - "topic:text-to-video"
-      - "automatic video clips shorts"
+      - "video clip generator"
       - "topic:text-to-speech voice"
-      - "programmatic design generator"
+      - "topic:generative-art"
       - "topic:image-editing python"
 
   - id: adtech-performance
     name: Adtech y performance
     short: Adtech
     color: "#1f8a70"
+    # Nicho mediano, muy poco código abierto de calidad: aflojamos un poco
+    min_stars: 25
+    max_age_months: 30
     lexicon:
       - ads
       - advertising
@@ -205,18 +223,22 @@ axes:
     queries:
       - "facebook ads api"
       - "topic:google-ads"
-      - "marketing attribution model"
-      - "marketing mix modeling"
+      - "topic:attribution"
+      - "media mix model"
       - "topic:marketing-automation"
       - "topic:ab-testing"
       - "topic:crm automation"
       - "seo automation tool"
-      - "advertising analytics dashboard"
+      - "topic:advertising"
 
   - id: agentes-llm
     name: Agentes, LLM y MCP
     short: Agentes
     color: "#d18b2c"
+    # Eje saturado: en la primera corrida copó 8 de 9 queries con el tope de
+    # 50 resultados. Subimos mucho el listón para quedarnos solo con lo serio.
+    min_stars: 300
+    max_age_months: 12
     lexicon:
       - agent
       - agents

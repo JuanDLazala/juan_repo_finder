@@ -28,6 +28,43 @@ def fecha_corta(iso: str | None) -> str:
     return f"{dt.day} {MESES[dt.month - 1]} {dt.year}"
 
 
+def select_with_quota(all_rows, cfg):
+    """Elige qué repos entran al dashboard, garantizando espacio a cada eje.
+
+    Sin esto, los ejes con más volumen en GitHub (agentes, LLM) copan el
+    ranking por puro número y los nichos pequeños (política, escucha)
+    desaparecen aunque tengan buenos proyectos. Primero se reserva una cuota
+    para cada eje, y el resto de los cupos se reparte por score global.
+    """
+    settings = cfg["settings"]
+    quota = settings.get("per_axis_quota", 25)
+    top_n = settings.get("dashboard_top_n", 150)
+
+    selected, seen = [], set()
+
+    for axis in cfg["axes"]:
+        taken = 0
+        for row in all_rows:            # ya vienen ordenados por score
+            if taken >= quota:
+                break
+            if row["full_name"] in seen:
+                continue
+            if axis["id"] in jload(row["axes"]):
+                selected.append(row)
+                seen.add(row["full_name"])
+                taken += 1
+
+    for row in all_rows:                # relleno por mérito global
+        if len(selected) >= top_n:
+            break
+        if row["full_name"] not in seen:
+            selected.append(row)
+            seen.add(row["full_name"])
+
+    selected.sort(key=lambda r: r["total"] or 0, reverse=True)
+    return selected[:top_n]
+
+
 def collect_data(conn, cfg, run_id):
     settings = cfg["settings"]
     axes = {a["id"]: a for a in cfg["axes"]}
@@ -39,7 +76,7 @@ def collect_data(conn, cfg, run_id):
         "SELECT COUNT(*) AS c FROM runs WHERE finished_at IS NOT NULL"
     ).fetchone()["c"]
 
-    rows = conn.execute(
+    all_rows = conn.execute(
         """SELECT s.*, sc.momentum, sc.maturity, sc.relevance, sc.total,
                   sc.stars_delta, sc.days_elapsed, sc.provisional, sc.flags,
                   r.description, r.html_url, r.homepage, r.language,
@@ -49,10 +86,11 @@ def collect_data(conn, cfg, run_id):
            JOIN scores sc ON sc.full_name = s.full_name AND sc.run_id = s.run_id
            JOIN repos  r  ON r.full_name  = s.full_name
            WHERE s.run_id = ?
-           ORDER BY sc.total DESC
-           LIMIT ?""",
-        (run_id, settings.get("dashboard_top_n", 120)),
+           ORDER BY sc.total DESC""",
+        (run_id,),
     ).fetchall()
+
+    rows = select_with_quota(all_rows, cfg)
 
     captured = run["started_at"] if run else None
     repos = []

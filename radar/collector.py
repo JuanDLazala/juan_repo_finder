@@ -27,6 +27,23 @@ USER_AGENT = "radar-repos/1.0"
 # Construcción de queries
 # --------------------------------------------------------------------------
 
+OVERRIDABLE = ("min_stars", "max_age_months", "max_idle_days")
+
+
+def axis_settings(settings: dict, axis: dict) -> dict:
+    """Mezcla los ajustes globales con los que el eje sobrescriba.
+
+    Cada nicho de GitHub tiene su propia escala: la tecnología cívica y
+    electoral es pequeña y lenta, los agentes y LLM están saturados. Sin
+    umbrales por eje, uno inunda el ranking y el otro sale vacío.
+    """
+    merged = dict(settings)
+    for key in OVERRIDABLE:
+        if key in axis:
+            merged[key] = axis[key]
+    return merged
+
+
 def build_query(core: str, settings: dict) -> str:
     """Añade los filtros duros a la parte semántica de la query."""
     now = datetime.now(timezone.utc)
@@ -204,8 +221,9 @@ def run(config_path=None, db_path=None, fixture=None, dry_run=False) -> int:
     if dry_run:
         for axis in cfg["axes"]:
             print(f"\n[{axis['id']}]")
+            local = axis_settings(settings, axis)
             for core in axis["queries"]:
-                print("  " + build_query(core, settings))
+                print("  " + build_query(core, local))
         return 0
 
     if not token and not fixture:
@@ -229,9 +247,12 @@ def run(config_path=None, db_path=None, fixture=None, dry_run=False) -> int:
     seen: set[str] = set()
 
     for axis in cfg["axes"]:
-        print(f"\n[{axis['id']}] {axis['name']}", flush=True)
+        local = axis_settings(settings, axis)
+        print(f"\n[{axis['id']}] {axis['name']}  "
+              f"(min {local['min_stars']}★, {local['max_age_months']} meses)",
+              flush=True)
         for core in axis["queries"]:
-            query = build_query(core, settings)
+            query = build_query(core, local)
             n_queries += 1
 
             if fixture_data is not None:

@@ -160,6 +160,21 @@ def main() -> None:
     check("El JSON embebido es válido", isinstance(payload, list) and payload,
           f"({len(payload)} repos en el dashboard)")
 
+    import yaml as _yaml
+    with open(ROOT / "config.yaml", encoding="utf-8") as fh:
+        cfg = _yaml.safe_load(fh)
+    axis_ids = [a["id"] for a in cfg["axes"]]
+    present = {a for r in payload for a in r["axes"]}
+    missing = [a for a in axis_ids if a not in present]
+    check("Todos los ejes tienen espacio en el dashboard", not missing,
+          f"(faltan: {missing})" if missing else f"({len(axis_ids)} ejes)")
+
+    counts = {a: sum(1 for r in payload if a in r["axes"]) for a in axis_ids}
+    quota = cfg["settings"].get("per_axis_quota", 25)
+    starved = {a: c for a, c in counts.items() if c < min(quota, 5)}
+    check("Ningún eje queda sepultado por otro", not starved,
+          f"({counts})")
+
     failed = [c for c in checks if not c[1]]
     print(f"\n{'=' * 60}")
     if failed:
